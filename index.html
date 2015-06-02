@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src="jquery-1.10.1.js"></script>
+	</head>
+	<body>
+		<canvas id="container" width = '250' height= '250'>
+		</canvas>
+
+		<script>
+			$(document).ready(function(){
+				/****  CONSTANTS  ****/
+				var height = 10,
+				    width = 10,
+				    init_length = 3,
+				    interval = 100;
+
+				/****  STATE ****/
+				// the canvas stuff
+				var container = $("#container")[0],
+					context = container.getContext("2d"),
+					container_height = container.height,
+				    container_width = container.width;
+
+				// the snake stuff
+				var snake_arr = [],
+				    direction = "right",
+				    old_direction = direction,
+				    food = {},
+				    move_interval = null;
+
+				/****  BUSINESS LOGIC ****/
+				function paint() {
+					container.width = container.width;
+					context.fillStyle = "#9ACD32";
+					context.fillRect(0, 0, container_width, container_height);
+					context.strokeStyle = "black";
+					context.strokeRect(0, 0, container_width, container_height);
+
+					for(i = 0; i < snake_arr.length; i++) {
+						var cell = snake_arr[i];
+						context.fillStyle = "#F0A524";
+						context.fillRect(cell.x, cell.y, 10, 10);
+						context.strokeStyle = "white";
+						context.strokeRect(cell.x, cell.y, 10, 10);
+					}
+
+					context.fillStyle = "#FC0D25";
+					context.fillRect(food.x, food.y, width, height);
+					context.strokeStyle = "white";
+					context.strokeRect(food.x, food.y, width, height);
+				}
+
+				function move_snake() {
+					var old_head = snake_arr[0],
+						new_head = {
+							x: old_head.x,
+							y: old_head.y
+						},
+						game_over = false;
+
+					switch(direction) {
+						case "right":
+							new_head.x += width;
+							if(new_head.x > container_width - width) {
+								new_head.x = 0;
+							}
+							break;
+						case "down":
+							new_head.y += height;
+							if(new_head.y > container_height - height) {
+								new_head.y = 0;
+							}
+							break;
+						case "left":
+							new_head.x -= width;
+							if(new_head.x < 0) {
+								new_head.x = container_width - width;
+							}
+							break;
+						case "up":
+							new_head.y -= height;
+							if(new_head.y < 0) {
+								new_head.y = container_height - height;
+							}
+							break;
+					}
+
+					if(game_over || eat_itself()){
+						clearInterval(move_interval);
+						alert("game over!");
+						return;
+					}
+
+					if(elems_overlay(food, new_head)){
+						place_food();
+					}else {
+						snake_arr.pop();
+					}
+
+					snake_arr.unshift(new_head);
+					paint();
+					old_direction = direction;
+				}
+
+	  			function eat_itself() {
+	  				for(i = 1; i < snake_arr.length; i++){
+
+							if(elems_overlay(snake_arr[0], snake_arr[i])){
+								return true;
+							}
+						}
+	  				return false;
+	  			}
+
+	  			function elems_overlay(elem1, elem2) {
+					var elem1_left = elem1.x,
+						elem1_right = elem1.x + width - 1,
+						elem1_top = elem1.y,
+						elem1_bottom = elem1.y + height - 1,
+						elem2_left = elem2.x,
+						elem2_right = elem2.x + width - 1,
+						elem2_top = elem2.y,
+						elem2_bottom = elem2.y + height - 1;
+
+						if( 
+							(elem1_left >= elem2_left && elem1_left <= elem2_right
+								|| elem1_right >= elem2_left && elem1_right <= elem2_right)
+							&&
+							(elem1_top >= elem2_top && elem1_top <= elem2_bottom
+								|| elem1_bottom >= elem2_top && elem1_bottom <= elem2_bottom)
+							) {
+							return true;
+						}
+					return false;
+				}
+	  			
+	  			function place_food() {
+	  				while(true) {
+		  				food.x = Math.round((Math.random() * (container_width - width ))/10)*10,
+		  				food.y = Math.round((Math.random() * (container_height - height ))/10)*10;
+
+		  				for(i = 0; i < snake_arr.length; i++){
+							if(elems_overlay(food, snake_arr[i])) {
+								continue;
+							}
+						}
+						return;
+					}
+	  			}
+
+	  			/**** START ROCK & ROLL ****/
+	  			// create snake
+				for(i = init_length - 1; i >= 0; i--) {
+					snake_arr.push({
+				    	x: i * width,
+				    	y: 0
+				    });
+				}
+
+				// put first food
+				place_food();
+
+				paint();
+
+				// handle control
+				$(document).keydown(function(e) {
+					console.log("keydown");
+	  				switch(e.keyCode){
+	  					case 37:
+	  						direction = "left";
+	  						break;
+	  					case 38:
+	  						direction = "up";
+	  						break;
+	  					case 39:
+	  						direction = "right";
+	  						break;
+	  					case 40:
+	  						direction = "down";
+	  						break;
+	  				}
+	  				if(direction == "left" && old_direction == "right" 
+	  				   || direction == "right" && old_direction == "left"
+	  				   || direction == "up" && old_direction == "down"
+	  				   || direction == "down" && old_direction == "up"){
+                          direction = old_direction;
+	  				}
+	  			});
+				
+				// start moving!
+				move_interval = setInterval(move_snake, interval);
+		    });
+		</script>
+	</body>
+</html>
